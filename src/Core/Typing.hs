@@ -1,6 +1,7 @@
 module Core.Typing
   (
-  lift
+  lift,
+  lift0
   )
 where
 
@@ -43,3 +44,7 @@ lift ctx ( TmPi a b ) = do
   let extCtx = extendContext ctx a -- extended context
   lift extCtx b -- s2 (second part of form)
 
+
+-- A shortcut for a list with empty context
+lift0 :: Term -> Maybe Term
+lift0 = lift emptyContext

@@ -5,11 +5,16 @@ import Test.Hspec.Contrib.HUnit
 import Test.Core.Eval
 import Test.Core.Typing
 
+import Test.LambdaFrontend.Parser
+
 tests :: Test
 tests = TestList [
     TestLabel "Core" $ TestList [
       TestLabel "Eval" testsEval,
       TestLabel "Typing" testsTyping
+    ],
+    TestLabel "LambdaFrontend" $ TestList [
+      TestLabel "Parser" testsParser
     ]
   ]
 
