@@ -26,7 +26,7 @@ mkApp4 t1 t2 t3 = mkApp2 ( mkApp3 t1 t2 t3 )
 
 
 mkArrow2 :: Term -> Term -> Term
-mkArrow2 t1 t2 = TmPi t1 ( shift0 1 t2 )
+mkArrow2 t1 t2 = TmPi t1 ( shift 1 t2 )
 
 mkArrow3 :: Term -> Term -> Term -> Term
 mkArrow3 t1 t2 t3 = mkArrow2 t1 ( mkArrow2 t2 t3 )

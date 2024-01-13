@@ -1,4 +1,8 @@
-module Core.Typing where
+module Core.Typing
+  (
+  lift
+  )
+where
 
 import Core.AST
 import Core.Eval

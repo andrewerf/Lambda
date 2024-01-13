@@ -1,4 +1,15 @@
-module Core.AST where
+module Core.AST
+  (
+  Name(..),
+  Term(..),
+  Context,
+  emptyContext,
+  getTerm,
+  extendContext,
+  extendContextGlobal,
+  shift
+  )
+where
 
 import Relude.List
  
@@ -46,7 +57,7 @@ emptyContext = Context [] []
 
 
 getTerm :: Context -> Name -> Maybe Term
-getTerm ctx ( Local i ) = shift0 ( i + 1 ) <$> localContext ctx !!? i
+getTerm ctx ( Local i ) = shift ( i + 1 ) <$> localContext ctx !!? i
 getTerm ctx ( Global s ) = lookup s ( globalContext ctx )
 
 
@@ -58,19 +69,17 @@ extendContextGlobal :: Context -> String -> Term -> Context
 extendContextGlobal ctx s tm = Context ( ( s, tm ) : globalContext ctx ) ( localContext ctx )
 
 
--- Shifts local variables in a term
-shift0 :: Int -> Term -> Term
-shift0 = shift 0
-
 -- Shifts with a cut-off (first arg)
-shift :: Int -> Int -> Term -> Term
-shift k x tm@( TmVar ( Local t ) )
-  | t < k = tm
-  | otherwise = TmVar ( Local $ t + x )
-shift _ _ tm@( TmVar ( Global _ ) ) = tm
-shift _ _ TmSq = TmSq
-shift _ _ TmStar = TmStar
-shift k x ( TmAbs t1 t2 ) = TmAbs ( shift k x t1 ) ( shift (k + 1) x t2 )
-shift k x ( TmPi t1 t2 ) = TmPi ( shift k x t1 ) ( shift (k + 1) x t2 )
-shift k x ( TmApp t1 t2 ) = TmApp ( shift k x t1 ) ( shift k x t2 )
+shift :: Int -> Term -> Term
+shift = shift_ 0
+  where
+    shift_ k x tm@( TmVar ( Local t ) )
+      | t < k = tm
+      | otherwise = TmVar ( Local $ t + x )
+    shift_ _ _ tm@( TmVar ( Global _ ) ) = tm
+    shift_ _ _ TmSq = TmSq
+    shift_ _ _ TmStar = TmStar
+    shift_ k x ( TmAbs t1 t2 ) = TmAbs ( shift_ k x t1 ) ( shift_ (k + 1) x t2 )
+    shift_ k x ( TmPi t1 t2 ) = TmPi ( shift_ k x t1 ) ( shift_ (k + 1) x t2 )
+    shift_ k x ( TmApp t1 t2 ) = TmApp ( shift_ k x t1 ) ( shift_ k x t2 )
 
