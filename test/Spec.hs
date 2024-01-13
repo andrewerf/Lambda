@@ -7,8 +7,10 @@ import Test.Core.Typing
 
 tests :: Test
 tests = TestList [
-    TestLabel "Eval" testsEval,
-    TestLabel "Typing" testsTyping
+    TestLabel "Core" $ TestList [
+      TestLabel "Eval" testsEval,
+      TestLabel "Typing" testsTyping
+    ]
   ]
 
 main :: IO ()
