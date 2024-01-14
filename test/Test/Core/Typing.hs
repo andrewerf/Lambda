@@ -14,10 +14,6 @@ import Core.AST
 import Core.Typing
 
 
-assertEqualM :: ( Monad m, Show ( m a ), Eq ( m a ) ) => String -> a -> m a -> Assertion
-assertEqualM s y = assertEqual s ( return y )
-
-
 testSimple = TestLabel "simple lifts" $ numberedTestList [
     TestCase $ assertEqualM "typeof(\\X : * . X) == Πx:*.* ( * -> * )"
       ( TmPi TmStar TmStar )

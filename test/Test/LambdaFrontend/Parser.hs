@@ -18,7 +18,7 @@ checkTerm name t =
     repr = show . fromCore $ t
     t' = toCore . parse $ repr
   in
-    assertEqual ( name ++ " (repr: " ++ repr ++ ")" ) t t'
+    assertEqualM ( name ++ " (repr: " ++ repr ++ ")" ) t t'
 
 testBoolean = TestLabel "boolean numerals" $ numberedTestList [
     TestCase $ checkTerm "true" tru_,

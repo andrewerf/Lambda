@@ -12,6 +12,7 @@ $greek = [α-ζΑ-Ζ]
 tokens :-
 
 $white+		;
+let             { \_ -> TkLet }
 \\				{ \_ -> TkAbs }
 $alpha [$alpha $digit \_ \']*
 				{ \s -> TkVar s }
@@ -23,6 +24,7 @@ $alpha [$alpha $digit \_ \']*
 \*              { \_ -> TkStar }
 \@              { \_ -> TkPi }
 \Π              { \_ -> TkPi }
+=               { \_ -> TkEq }
 
 {
 
@@ -35,7 +37,9 @@ data Token =
   TkColon |
   TkArrow |
   TkStar |
-  TkPi
+  TkPi |
+  TkLet |
+  TkEq
   deriving ( Eq, Show )
 
 tkVarName :: Token -> String

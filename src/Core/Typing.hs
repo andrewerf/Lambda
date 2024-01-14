@@ -1,5 +1,6 @@
 module Core.Typing
   (
+  Context,
   lift,
   lift0
   )
@@ -7,6 +8,18 @@ where
 
 import Core.AST
 import Core.Eval
+
+
+import Relude.List
+
+
+-- Type derivation context.
+-- `Context !! i` represents the "type" (lift) of the i-th De Bruijn variable.
+type Context = [Term]
+
+-- Extracts term from the context. Automatically shifts it by the size of the context.
+getTerm :: Context -> Int -> Maybe Term
+getTerm ctx i = shift ( i + 1 ) <$> ctx !!? i
 
 
 -- Checks if two terms are beta-equivalent (meaning they have similar normal forms)
@@ -33,7 +46,7 @@ lift ctx ( TmApp m n ) = do
     _ -> Nothing
 
 lift ctx ( TmAbs a m ) = do
-  let extCtx = extendContext ctx a -- extended context
+  let extCtx = a : ctx -- extended context
   b <- lift extCtx m -- type of tail (first part of abs)
   let r = TmPi a b
   _ <- lift ctx r -- type of abstraction (second part of abs)
@@ -41,10 +54,10 @@ lift ctx ( TmAbs a m ) = do
 
 lift ctx ( TmPi a b ) = do
   _ <- lift ctx a -- s1 (first part of form)
-  let extCtx = extendContext ctx a -- extended context
+  let extCtx = a : ctx -- extended context
   lift extCtx b -- s2 (second part of form)
 
 
 -- A shortcut for a list with empty context
 lift0 :: Term -> Maybe Term
-lift0 = lift emptyContext
+lift0 = lift []

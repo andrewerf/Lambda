@@ -16,7 +16,7 @@ data Term
   | TmVar String
   | TmAbs String Term Term
   | TmPi String Term Term
-  | TmArrow Term Term -- the only "sugar" we provide for a lambda-calc: `A -> B` is the same as `Πx:A.B` if `x` not in `FV(B)`.
+  | TmArrow Term Term -- "sugar": `A -> B` is the same as `Πx:A.B` if `x` not in `FV(B)`.
   | TmApp Term Term
   deriving Eq
 
@@ -31,20 +31,17 @@ instance Show Term where
 
 
 -- Transforms to core AST
-toCore :: Term -> C.Term
+toCore :: Term -> Maybe C.Term
 toCore = toCore_ []
   where
-    toCore_ :: [String] -> Term -> C.Term
-    toCore_ _ TmSq = C.TmSq
-    toCore_ _ TmStar = C.TmStar
-    toCore_ ctx ( TmVar s ) = case elemIndex s ctx of
-      Just i -> C.TmVar ( C.Local i )
-      Nothing -> C.TmVar ( C.Global s )
-    toCore_ ctx ( TmAbs s t1 t2 ) = C.TmAbs ( toCore_ ctx t1 ) ( toCore_ ( s : ctx ) t2 )
-    toCore_ ctx ( TmPi s t1 t2 ) = C.TmPi ( toCore_ ctx t1 ) ( toCore_ ( s : ctx ) t2 )
+    toCore_ :: [String] -> Term -> Maybe C.Term
+    toCore_ _ TmSq = Just C.TmSq
+    toCore_ _ TmStar = Just C.TmStar
+    toCore_ ctx ( TmVar s ) = C.TmVar <$> elemIndex s ctx
+    toCore_ ctx ( TmAbs s t1 t2 ) = liftA2 C.TmAbs ( toCore_ ctx t1 ) ( toCore_ ( s : ctx ) t2 )
+    toCore_ ctx ( TmPi s t1 t2 ) = liftA2 C.TmPi ( toCore_ ctx t1 ) ( toCore_ ( s : ctx ) t2 )
     toCore_ ctx ( TmArrow a b ) = toCore_ ctx ( TmPi "" a b )
-    toCore_ ctx ( TmApp t1 t2 ) = C.TmApp ( toCore_ ctx t1 ) ( toCore_ ctx t2 )
-
+    toCore_ ctx ( TmApp t1 t2 ) = liftA2 C.TmApp ( toCore_ ctx t1 ) ( toCore_ ctx t2 )
 
 -- Transforms a core term to the corresponding frontend term (introducing unique variable names instead of indexes)
 fromCore :: C.Term -> Term
@@ -53,8 +50,7 @@ fromCore = fromCore_ []
     fromCore_ :: [String] -> C.Term -> Term
     fromCore_ _ C.TmSq = TmSq
     fromCore_ _ C.TmStar = TmStar
-    fromCore_ ctx ( C.TmVar ( C.Local i ) ) = TmVar $ ctx !! i
-    fromCore_ _ ( C.TmVar ( C.Global s ) ) = TmVar s
+    fromCore_ ctx ( C.TmVar i ) = TmVar $ ctx !! i
     fromCore_ ctx ( C.TmAbs m n ) = TmAbs vn ( fromCore_ ctx m ) ( fromCore_ ( vn : ctx ) n )
       where vn = "x" ++ show ( length ctx )
     fromCore_ ctx ( C.TmPi m n ) = TmPi vn ( fromCore_ ctx m ) ( fromCore_ ( vn : ctx ) n )

@@ -15,10 +15,9 @@ import Core.AST
 subst :: Int -> Term -> Term -> Term
 subst _ TmSq _ = TmSq
 subst _ TmStar _ = TmStar
-subst i t@( TmVar ( Local j ) ) x
+subst i t@( TmVar j ) x
   | i == j = x
   | otherwise = t
-subst _ t@( TmVar _ ) _ = t
 subst i ( TmAbs a b ) x = TmAbs ( subst i a x ) ( subst ( i + 1 ) b ( shift 1 x ) )
 subst i ( TmApp a b ) x = TmApp ( subst i a x ) ( subst i b x )
 subst i ( TmPi a b ) x = TmPi ( subst i a x ) ( subst ( i + 1 ) b ( shift 1 x ) )

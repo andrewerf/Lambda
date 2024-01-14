@@ -4,15 +4,11 @@ module Test.Core.Numerals where
 
 import Core.AST
 
-
-mkLocalVar :: Int -> Term
-mkLocalVar = TmVar . Local
-
-loc0 = mkLocalVar 0
-loc1 = mkLocalVar 1
-loc2 = mkLocalVar 2
-loc3 = mkLocalVar 3
-loc4 = mkLocalVar 4
+loc0 = TmVar 0
+loc1 = TmVar 1
+loc2 = TmVar 2
+loc3 = TmVar 3
+loc4 = TmVar 4
 
 
 mkApp2 :: Term -> Term -> Term
@@ -66,3 +62,14 @@ c7_ = mkApp2 succ_ c6_
 c8_ = mkApp2 succ_ c7_
 c9_ = mkApp2 succ_ c8_
 c10_ = mkApp2 succ_ c9_
+
+
+--
+---- dependent list type `List X n` where `n` is the number of elements
+--_list_ = TmPi TmStar $ TmPi _nat_ $ TmPi TmStar $ mkArrow3 ( mkArrow3 loc2 loc0 loc0 ) loc0 loc0
+--
+---- common `nil` for all the lists
+--nil_ = TmAbs TmStar $ TmAbs TmStar $ TmAbs ( mkArrow3 loc1 loc0 loc0 ) $ TmAbs loc1 loc0
+-- 
+--cons_ = TmAbs TmStar $ TmAbs _nat_ $ TmAbs loc1 $ TmAbs ( mkApp3 _list_ loc3 loc2 ) $ 
+--  TmAbs TmStar $ TmAbs ( mkArrow3 loc4 loc0 loc0 ) $ TmAbs loc1 $ mkApp3 loc1 ( mkApp4 loc3  )

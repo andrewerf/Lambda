@@ -22,9 +22,9 @@ eval_ :: String -> String
 eval_ s = 
   let
     tm = toCore ( parse s )
-    mtp = lift0 tm
+    mtp = tm >>= lift0
   in
-    show ( fromCore $ eval tm ) ++ " : " ++ show ( fromCore <$> mtp )
+    show ( fromCore . eval <$> tm ) ++ " : " ++ show ( fromCore <$> mtp )
 
 print_ :: String -> IO()
 print_ = putStrLn

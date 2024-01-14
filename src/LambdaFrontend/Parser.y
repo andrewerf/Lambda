@@ -20,6 +20,8 @@ var			{ TkVar _ }
 '->'		{ TkArrow }
 '*'         { TkStar }
 '@'         { TkPi }
+let         { TkLet }
+'='         { TkEq }
 
 %%
 
