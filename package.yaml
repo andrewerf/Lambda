@@ -54,6 +54,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - Lambda
+    - megaparsec
 
 tests:
   Lambda-test:

@@ -9,7 +9,6 @@ where
 
 import Data.List ( elemIndex )
 
-import qualified Core.Typing as T
 import qualified Core.AST as C
 
 -- Same as in core, but with names instead of De Bruijn indices
