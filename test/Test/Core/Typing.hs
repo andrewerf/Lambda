@@ -16,11 +16,11 @@ import Core.Typing
 
 testSimple = TestLabel "simple lifts" $ numberedTestList [
     TestCase $ assertEqualM "typeof(\\X : * . X) == Πx:*.* ( * -> * )"
-      ( TmPi TmStar TmStar )
-      ( lift0 $ TmAbs TmStar loc0 ),
+      ( mkPi TmStar TmStar )
+      ( lift0 $ mkAbs TmStar loc0 ),
     TestCase $ assertEqualM "typeof(\\X : *. \\x : X. x) == ΠX:*.X -> X == ΠX:*.Πx:X.X"
-      ( TmPi TmStar ( mkArrow2 loc0 loc0 ) )
-      ( lift0 $ TmAbs TmStar ( TmAbs loc0 loc0 ) )
+      ( mkPi TmStar ( mkArrow2 loc0 loc0 ) )
+      ( lift0 $ mkAbs TmStar ( mkAbs loc0 loc0 ) )
   ]
 
 
@@ -39,9 +39,16 @@ testNatural = TestLabel "natural numerals" $ numberedTestList [
     TestCase $ assertEqualM "typeof(4 * 8) == Nat" _nat_ ( lift0 ( mkApp3 mult_ c4_ c8_ ) )
   ]
 
+testLetBinding = TestLabel "let-bindigns" $ numberedTestList [
+    TestCase $ assertEqualM "typeof(let x = 0 in x) == Nat" _nat_ ( lift0 $ mkLet c0_ loc0 ),
+    TestCase $ assertEqualM "typeof(let x = 2 in let y = 5 in x + y) == Nat"
+      _nat_ ( lift0 $ mkLet c2_ ( mkLet c5_ ( mkApp3 plus_ loc1 loc0 ) ) )
+  ]
+
 
 testsTyping = TestList [
     testSimple,
     testBoolean,
-    testNatural
+    testNatural,
+    testLetBinding
   ]

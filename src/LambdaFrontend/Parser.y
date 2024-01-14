@@ -22,16 +22,20 @@ var			{ TkVar _ }
 '@'         { TkPi }
 let         { TkLet }
 '='         { TkEq }
+in          { TkIn }
 
 %%
 
 Expr : LeftExpr Lambda          { TmApp $1 $2 }
      | Lambda                   { $1 }
      | LeftExpr                 { $1 }
-     | let var '=' Expr         { TmLet ( tkVarName $2 ) $4 }
+     | Let                      { $1 }
 
 LeftExpr : LeftExpr Atom        { TmApp $1 $2 }
          | Atom                 { $1 }
+
+Let : let var '=' Expr in Expr  { TmLetIn ( tkVarName $2 ) $4 $6 }
+    | let var '=' Expr          { TmLet ( tkVarName $2 ) $4 } -- I know it is a shift/reduce conflict, but Happy prefers shift over reduce and this is what we need here
 
 Lambda : '\\' var ':' Expr '.' Expr
                                 { TmAbs ( tkVarName $2 ) $4 $6 }

@@ -18,9 +18,8 @@ subst _ TmStar _ = TmStar
 subst i t@( TmVar j ) x
   | i == j = x
   | otherwise = t
-subst i ( TmAbs a b ) x = TmAbs ( subst i a x ) ( subst ( i + 1 ) b ( shift 1 x ) )
+subst i ( TmBind bind a b ) x = TmBind bind ( subst i a x ) ( subst ( i + 1 ) b ( shift 1 x ) )
 subst i ( TmApp a b ) x = TmApp ( subst i a x ) ( subst i b x )
-subst i ( TmPi a b ) x = TmPi ( subst i a x ) ( subst ( i + 1 ) b ( shift 1 x ) )
 
 
 -- `subst0 t x` is t[0 = x].
@@ -39,7 +38,8 @@ evalLazy = go []
   where
     go :: [Term] -> Term -> Term
     go l ( TmApp f x ) = go (x : l) f
-    go (x : l) ( TmAbs _ t ) = go l ( substShift t x )
+    go l ( TmBind LetBinding x y ) = go l ( substShift y x )
+    go (x : l) ( TmBind AbsBinding _ t ) = go l ( substShift t x )
     go l f = foldl TmApp f l
 
 -- Evaluates given term with all sub expressions
@@ -48,6 +48,7 @@ eval = go []
   where
     go :: [Term] -> Term -> Term
     go l ( TmApp f x ) = go (x : l) f
-    go [] ( TmAbs a t ) = TmAbs a ( eval t )
-    go (x : l) ( TmAbs _ t ) = go l ( substShift t x )
+    go l ( TmBind LetBinding x y ) = go l ( substShift y x )
+    go [] ( TmBind AbsBinding a t ) = TmBind AbsBinding a ( eval t )
+    go (x : l) ( TmBind AbsBinding _ t ) = go l ( substShift t x )
     go l f = foldl TmApp f ( map eval l )

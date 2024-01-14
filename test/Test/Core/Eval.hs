@@ -49,8 +49,15 @@ testNatural = TestLabel "natural numerals" $ numberedTestList [
   ]
 
 
+testLetBinding = TestLabel "let-bindigns" $ numberedTestList [
+    TestCase $ assertBetaEqual "(let x = 0 in x) == 0" c0_ ( mkLet c0_ loc0 ),
+    TestCase $ assertBetaEqual "(let x = 2 in let y = 5 in x + y) == 7"
+      c7_ ( mkLet c2_ ( mkLet c5_ ( mkApp3 plus_ loc1 loc0 ) ) )
+  ]
+
 
 testsEval = TestList [
     testBoolean,
-    testNatural
+    testNatural,
+    testLetBinding
   ]

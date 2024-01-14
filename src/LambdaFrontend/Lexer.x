@@ -13,6 +13,7 @@ tokens :-
 
 $white+		;
 let             { \_ -> TkLet }
+in              { \_ -> TkIn }
 \\				{ \_ -> TkAbs }
 $alpha [$alpha $digit \_ \']*
 				{ \s -> TkVar s }
@@ -39,7 +40,8 @@ data Token =
   TkStar |
   TkPi |
   TkLet |
-  TkEq
+  TkEq |
+  TkIn
   deriving ( Eq, Show )
 
 tkVarName :: Token -> String
