@@ -3,12 +3,10 @@ module Main ( main ) where
 import System.IO
 
 import LambdaFrontend.Parser ( parse )
-import LambdaFrontend.AST ( toCore, fromCore )
+import LambdaFrontend.AST
 
-import Core.Eval ( eval )
-import Core.Typing ( lift0 )
-
-import Control.Monad ( unless )
+import qualified Core.Eval as E
+import qualified Core.Typing as T
 
 
 -- REPL
@@ -18,19 +16,27 @@ read_ = putStr "λ> "
      >> hFlush stdout
      >> getLine
 
-eval_ :: String -> String
-eval_ s = 
+eval :: Environment -> Term -> ( Environment, Maybe Term, Maybe Term )
+eval env tm =
   let
-    tm = toCore ( parse s )
-    mtp = tm >>= lift0
+    ctm = toCore env tm
+    newEnv = case tm of
+      ( TmLet s tl ) -> ( s, tl ) : env
+      _ -> env
   in
-    show ( fromCore . eval <$> tm ) ++ " : " ++ show ( fromCore <$> mtp )
+    ( newEnv, fromCore . E.eval <$> ctm, fromCore <$> ( ctm >>= T.lift0 ) )
 
-print_ :: String -> IO()
-print_ = putStrLn
+repl :: Environment -> IO()
+repl env = do
+  inp <- read_
+  case inp of
+    ":quit" -> return ()
+    ":env" -> print env >> repl env
+    _ -> do
+      let t = parse inp
+      let ( newEnv, tm, tp ) = eval env t
+      putStrLn ( show tm ++ " : " ++ show tp )
+      repl newEnv
 
 main :: IO()
-main = do
-  inp <- read_
-  unless ( inp == ":quit" )
-       $ print_ ( eval_ inp ) >> main
+main = repl []

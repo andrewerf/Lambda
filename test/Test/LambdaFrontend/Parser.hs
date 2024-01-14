@@ -16,7 +16,7 @@ checkTerm :: String -> C.Term -> Assertion
 checkTerm name t =
   let
     repr = show . fromCore $ t
-    t' = toCore . parse $ repr
+    t' = toCore [] . parse $ repr
   in
     assertEqualM ( name ++ " (repr: " ++ repr ++ ")" ) t t'
 

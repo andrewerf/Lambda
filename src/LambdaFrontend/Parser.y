@@ -28,6 +28,7 @@ let         { TkLet }
 Expr : LeftExpr Lambda          { TmApp $1 $2 }
      | Lambda                   { $1 }
      | LeftExpr                 { $1 }
+     | let var '=' Expr         { TmLet ( tkVarName $2 ) $4 }
 
 LeftExpr : LeftExpr Atom        { TmApp $1 $2 }
          | Atom                 { $1 }

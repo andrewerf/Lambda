@@ -1,6 +1,7 @@
 module LambdaFrontend.AST
   (
   Term(..),
+  Environment,
   toCore,
   fromCore
   )
@@ -18,6 +19,7 @@ data Term
   | TmPi String Term Term
   | TmArrow Term Term -- "sugar": `A -> B` is the same as `Πx:A.B` if `x` not in `FV(B)`.
   | TmApp Term Term
+  | TmLet String Term
   deriving Eq
 
 instance Show Term where
@@ -28,20 +30,27 @@ instance Show Term where
   show ( TmPi s a m ) = "Π" ++ s ++ ":" ++ show a ++ "." ++ show m
   show ( TmArrow a b ) = show a ++ " -> " ++ show b
   show ( TmApp t1 t2 ) = "(" ++ show t1 ++ ") (" ++ show t2 ++ ")"
+  show ( TmLet x y ) = "let " ++ x ++ " = " ++ show y
 
+
+type Environment = [(String, Term)]
 
 -- Transforms to core AST
-toCore :: Term -> Maybe C.Term
+-- Takes `Environment` to lookup free variables (the variables for which the abstraction is not found)
+toCore :: Environment -> Term -> Maybe C.Term
 toCore = toCore_ []
   where
-    toCore_ :: [String] -> Term -> Maybe C.Term
-    toCore_ _ TmSq = Just C.TmSq
-    toCore_ _ TmStar = Just C.TmStar
-    toCore_ ctx ( TmVar s ) = C.TmVar <$> elemIndex s ctx
-    toCore_ ctx ( TmAbs s t1 t2 ) = liftA2 C.TmAbs ( toCore_ ctx t1 ) ( toCore_ ( s : ctx ) t2 )
-    toCore_ ctx ( TmPi s t1 t2 ) = liftA2 C.TmPi ( toCore_ ctx t1 ) ( toCore_ ( s : ctx ) t2 )
-    toCore_ ctx ( TmArrow a b ) = toCore_ ctx ( TmPi "" a b )
-    toCore_ ctx ( TmApp t1 t2 ) = liftA2 C.TmApp ( toCore_ ctx t1 ) ( toCore_ ctx t2 )
+    toCore_ :: [String] -> Environment -> Term -> Maybe C.Term
+    toCore_ _ _ TmSq = Just C.TmSq
+    toCore_ _ _ TmStar = Just C.TmStar
+    toCore_ ctx env ( TmVar s ) = case elemIndex s ctx of
+      Nothing -> lookup s env >>= toCore_ ctx env
+      Just i -> Just $ C.TmVar i
+    toCore_ ctx env ( TmAbs s t1 t2 ) = liftA2 C.TmAbs ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
+    toCore_ ctx env ( TmPi s t1 t2 ) = liftA2 C.TmPi ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
+    toCore_ ctx env ( TmArrow a b ) = toCore_ ctx env ( TmPi "" a b )
+    toCore_ ctx env ( TmApp t1 t2 ) = liftA2 C.TmApp ( toCore_ ctx env t1 ) ( toCore_ ctx env t2 )
+    toCore_ ctx env ( TmLet _ tm ) = toCore_ ctx env tm
 
 -- Transforms a core term to the corresponding frontend term (introducing unique variable names instead of indexes)
 fromCore :: C.Term -> Term
