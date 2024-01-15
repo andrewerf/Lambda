@@ -31,9 +31,13 @@ Expr : LeftExpr Lambda          { TmApp $1 $2 }
      | Lambda                   { $1 }
      | LeftExpr                 { $1 }
      | Let                      { $1 }
+     | Arrow                    { $1 }
 
 LeftExpr : LeftExpr Atom        { TmApp $1 $2 }
          | Atom                 { $1 }
+
+Arrow : Atom '->' Arrow         { TmArrow $1 $3 }
+      | Atom '->' Atom          { TmArrow $1 $3 }
 
 Let : let var '=' Expr in Expr  { TmLetIn ( tkVarName $2 ) $4 $6 }
     | let var '=' Expr          { TmLet ( tkVarName $2 ) $4 Nothing } -- I know it is a shift/reduce conflict, but Happy prefers shift over reduce and this is what we need here
