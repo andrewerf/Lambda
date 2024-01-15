@@ -19,6 +19,7 @@ import qualified Text.Megaparsec.Char as P
 
 data Command
   = Quit
+  | Help
   | PrintEnv
   | ExecuteFile String
 
@@ -28,6 +29,7 @@ type Parser = P.Parsec Void String
 parsecCommand :: Parser Command
 parsecCommand = P.choice [
     Quit <$ P.string ":quit",
+    Help <$ P.string ":help",
     PrintEnv <$ P.string ":env",
     ExecuteFile <$> ( P.string ":exec " *> P.many P.anySingle )
   ]
@@ -60,6 +62,14 @@ pep env inp = do
 
 processCommand :: Environment -> Command -> IO()
 processCommand _ Quit = return ()
+processCommand env Help = do
+  putStrLn "Usage: enter a lambda term to be evaluated. The output gives you the evaluation result and its type."
+  putStrLn "Use special operator: `let x = s` (without `in`) to add definition to the environment."
+  putStrLn ":help -- print this help"
+  putStrLn ":env -- print environment"
+  putStrLn ":exec _file_ -- execute given file (by path)"
+  putStrLn ":load _file_ -- load definitions from the file (by path)"
+  repl env
 processCommand env PrintEnv = print env >> repl env
 processCommand env ( ExecuteFile fpath ) = do
   r <- ex2left @IOException ( readFile fpath )
@@ -76,7 +86,7 @@ repl :: Environment -> IO()
 repl env = do
   inp <- read_
   case parseCommand inp of
-    Nothing -> putStrLn "Unrecognised command" >> repl env
+    Nothing -> pep env inp >>= repl
     Just cmd -> processCommand env cmd
 
 main :: IO()
