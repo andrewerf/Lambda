@@ -56,7 +56,7 @@ toCore = toCore_ []
     toCore_ ctx env ( TmArrow a b ) = toCore_ ctx env ( TmPi "" a b )
     toCore_ ctx env ( TmApp t1 t2 ) = liftA2 C.TmApp ( toCore_ ctx env t1 ) ( toCore_ ctx env t2 )
     toCore_ ctx env ( TmLet _ tm Nothing ) = toCore_ ctx env tm
-    toCore_ ctx env ( TmLet _ _ ( Just mtm ) ) = toCore_ ctx env mtm
+    toCore_ ctx env ( TmLet s tm ( Just mtm ) ) = toCore_ ctx ( ( s, tm ) : env ) mtm
 
 -- Transforms a core term to the corresponding frontend term (introducing unique variable names instead of indexes)
 fromCore :: C.Term -> Term
