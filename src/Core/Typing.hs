@@ -42,22 +42,22 @@ lift ctx ( TmApp m n ) = do
   a <- lift ctx n -- type of argument (second part of app)
   case tf of
     -- Π-type with matching type
-    TmBind PiBinding a' b | betaEq a a' -> return $ substShift b n
+    TmBind ( PiBinding _ ) a' b | betaEq a a' -> return $ substShift b n
     _ -> Nothing
 
-lift ctx ( TmBind AbsBinding a m ) = do
+lift ctx ( TmBind ( AbsBinding s ) a m ) = do
   let extCtx = a : ctx -- extended context
   b <- lift extCtx m -- type of tail (first part of abs)
-  let r = TmBind PiBinding a b
+  let r = TmBind ( PiBinding s ) a b
   _ <- lift ctx r -- type of abstraction (second part of abs)
   return r
 
-lift ctx ( TmBind PiBinding a b ) = do
+lift ctx ( TmBind ( PiBinding _ ) a b ) = do
   _ <- lift ctx a -- s1 (first part of form)
   let extCtx = a : ctx -- extended context
   lift extCtx b -- s2 (second part of form)
 
-lift ctx ( TmBind LetBinding a b ) = do
+lift ctx ( TmBind ( LetBinding _ ) a b ) = do
   ta <- lift ctx a
   let extCtx = ta : ctx -- extended context
   tb <- lift extCtx b

@@ -2,6 +2,7 @@ module Core.AST
   (
   Binding(..),
   Term(..),
+  getBindingName,
   shift
   )
 where
@@ -9,10 +10,20 @@ where
 
 -- This type represents different kinds of bindings. They have similar properties, so it is useful to abstract it.
 data Binding
-  = AbsBinding -- term-level abstraction
-  | PiBinding  -- type-level abstraction
-  | LetBinding -- let-binding
-  deriving Eq
+  = AbsBinding String -- term-level abstraction
+  | PiBinding String -- type-level abstraction
+  | LetBinding String -- let-binding
+
+instance Eq Binding where
+  (==) ( AbsBinding _ ) ( AbsBinding _ ) = True
+  (==) ( PiBinding _ ) ( PiBinding _ ) = True
+  (==) ( LetBinding _ ) ( LetBinding _ ) = True
+  (==) _ _ = False
+
+getBindingName :: Binding -> String
+getBindingName ( AbsBinding s ) = s
+getBindingName ( PiBinding s ) = s
+getBindingName ( LetBinding s ) = s
 
 -- If lambda-C everything is a term, even types, as both types and terms could contain same intermixed constructs: applications and
 -- abstractions. This unification is a key property of the system.
@@ -31,9 +42,9 @@ instance Show Term where
   show TmSq = "□"
   show TmStar = "*"
   show ( TmVar x ) = show x
-  show ( TmBind AbsBinding a m ) = "\\:" ++ show a ++ "." ++ show m
-  show ( TmBind PiBinding a m ) = "Π:" ++ show a ++ "." ++ show m
-  show ( TmBind LetBinding a m ) = "let = " ++ show a ++ " in " ++ show m
+  show ( TmBind ( AbsBinding _ ) a m ) = "\\:" ++ show a ++ "." ++ show m
+  show ( TmBind ( PiBinding _ ) a m ) = "Π:" ++ show a ++ "." ++ show m
+  show ( TmBind ( LetBinding _ ) a m ) = "let = " ++ show a ++ " in " ++ show m
   show ( TmApp t1 t2 ) = "(" ++ show t1 ++ " " ++ show t2 ++ ")"
 
 -- Shifts with a cut-off (first arg)

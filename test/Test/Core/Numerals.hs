@@ -12,13 +12,13 @@ loc4 = TmVar 4
 
 
 mkAbs :: Term -> Term -> Term
-mkAbs = TmBind AbsBinding
+mkAbs = TmBind $ AbsBinding ""
 
 mkPi :: Term -> Term -> Term
-mkPi = TmBind PiBinding
+mkPi = TmBind $ PiBinding ""
 
 mkLet :: Term -> Term -> Term
-mkLet = TmBind LetBinding
+mkLet = TmBind $ LetBinding ""
 
 
 mkApp2 :: Term -> Term -> Term

@@ -50,9 +50,9 @@ toCore = toCore_ []
     toCore_ ctx env ( TmVar s ) = case elemIndex s ctx of
       Nothing -> lookup s env >>= toCore_ ctx env
       Just i -> Just $ C.TmVar i
-    toCore_ ctx env ( TmAbs s t1 t2 ) = liftA2 ( C.TmBind C.AbsBinding ) ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
-    toCore_ ctx env ( TmPi s t1 t2 ) = liftA2 ( C.TmBind C.PiBinding ) ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
-    toCore_ ctx env ( TmLetIn s t1 t2 ) = liftA2 ( C.TmBind C.LetBinding ) ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
+    toCore_ ctx env ( TmAbs s t1 t2 ) = liftA2 ( C.TmBind ( C.AbsBinding s ) ) ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
+    toCore_ ctx env ( TmPi s t1 t2 ) = liftA2 ( C.TmBind ( C.PiBinding s ) ) ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
+    toCore_ ctx env ( TmLetIn s t1 t2 ) = liftA2 ( C.TmBind ( C.LetBinding s ) ) ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
     toCore_ ctx env ( TmArrow a b ) = toCore_ ctx env ( TmPi "" a b )
     toCore_ ctx env ( TmApp t1 t2 ) = liftA2 C.TmApp ( toCore_ ctx env t1 ) ( toCore_ ctx env t2 )
     toCore_ ctx env ( TmLet _ tm Nothing ) = toCore_ ctx env tm
@@ -69,10 +69,12 @@ fromCore = fromCore_ []
     fromCore_ ctx ( C.TmBind binding m n ) =
       let
         f :: C.Binding -> String -> Term -> Term -> Term
-        f C.AbsBinding = TmAbs
-        f C.PiBinding = TmPi
-        f C.LetBinding = TmLetIn
+        f ( C.AbsBinding _ ) = TmAbs
+        f ( C.PiBinding _ ) = TmPi
+        f ( C.LetBinding _ ) = TmLetIn
       in
         f binding vn ( fromCore_ ctx m ) ( fromCore_ ( vn : ctx ) n )
-      where vn = "x" ++ show ( length ctx )
+      where
+        vn_ = C.getBindingName binding
+        vn = if length vn_ == 0 then "x" ++ show ( length ctx ) else vn_
     fromCore_ ctx ( C.TmApp m n ) = TmApp ( fromCore_ ctx m ) ( fromCore_ ctx n )
