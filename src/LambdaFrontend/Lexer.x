@@ -21,6 +21,7 @@ $alpha [$alpha $digit \_ \']*
 \) 				{ \_ -> TkRightPar }
 \.				{ \_ -> TkDot }
 \:				{ \_ -> TkColon }
+\;              { \_ -> TkSemicolon }
 \->				{ \_ -> TkArrow }
 \*              { \_ -> TkStar }
 \@              { \_ -> TkPi }
@@ -36,6 +37,7 @@ data Token =
   TkRightPar |
   TkDot |
   TkColon |
+  TkSemicolon |
   TkArrow |
   TkStar |
   TkPi |

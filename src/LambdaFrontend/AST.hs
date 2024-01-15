@@ -21,7 +21,7 @@ data Term
   | TmArrow Term Term -- "sugar": `A -> B` is the same as `Πx:A.B` if `x` not in `FV(B)`.
   | TmApp Term Term
   | TmLetIn String Term Term
-  | TmLet String Term -- special `let` for the REPL
+  | TmLet String Term ( Maybe Term ) -- special `let` for the REPL
   deriving Eq
 
 instance Show Term where
@@ -32,7 +32,8 @@ instance Show Term where
   show ( TmPi s a m ) = "Π" ++ s ++ ":" ++ show a ++ "." ++ show m
   show ( TmArrow a b ) = show a ++ " -> " ++ show b
   show ( TmApp t1 t2 ) = "(" ++ show t1 ++ ") (" ++ show t2 ++ ")"
-  show ( TmLet x y ) = "let " ++ x ++ " = " ++ show y
+  show ( TmLet x y Nothing ) = "let " ++ x ++ " = " ++ show y
+  show ( TmLet x y ( Just tm ) ) = "let " ++ x ++ " = " ++ show y ++ "; " ++ show tm
   show ( TmLetIn x y t ) = "let " ++ x ++ " = " ++ show y ++ " in " ++ show t
 
 
@@ -54,7 +55,8 @@ toCore = toCore_ []
     toCore_ ctx env ( TmLetIn s t1 t2 ) = liftA2 ( C.TmBind C.LetBinding ) ( toCore_ ctx env t1 ) ( toCore_ ( s : ctx ) env t2 )
     toCore_ ctx env ( TmArrow a b ) = toCore_ ctx env ( TmPi "" a b )
     toCore_ ctx env ( TmApp t1 t2 ) = liftA2 C.TmApp ( toCore_ ctx env t1 ) ( toCore_ ctx env t2 )
-    toCore_ ctx env ( TmLet _ tm ) = toCore_ ctx env tm
+    toCore_ ctx env ( TmLet _ tm Nothing ) = toCore_ ctx env tm
+    toCore_ ctx env ( TmLet _ _ ( Just mtm ) ) = toCore_ ctx env mtm
 
 -- Transforms a core term to the corresponding frontend term (introducing unique variable names instead of indexes)
 fromCore :: C.Term -> Term

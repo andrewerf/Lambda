@@ -17,6 +17,7 @@ var			{ TkVar _ }
 '('			{ TkLeftPar }
 ')'			{ TkRightPar }
 ':'			{ TkColon }
+';'			{ TkSemicolon }
 '->'		{ TkArrow }
 '*'         { TkStar }
 '@'         { TkPi }
@@ -35,7 +36,9 @@ LeftExpr : LeftExpr Atom        { TmApp $1 $2 }
          | Atom                 { $1 }
 
 Let : let var '=' Expr in Expr  { TmLetIn ( tkVarName $2 ) $4 $6 }
-    | let var '=' Expr          { TmLet ( tkVarName $2 ) $4 } -- I know it is a shift/reduce conflict, but Happy prefers shift over reduce and this is what we need here
+    | let var '=' Expr          { TmLet ( tkVarName $2 ) $4 Nothing } -- I know it is a shift/reduce conflict, but Happy prefers shift over reduce and this is what we need here
+    | let var '=' Expr ';'      { TmLet ( tkVarName $2 ) $4 Nothing }
+    | let var '=' Expr ';' Let  { TmLet ( tkVarName $2 ) $4 ( Just $6 ) }
 
 Lambda : '\\' var ':' Expr '.' Expr
                                 { TmAbs ( tkVarName $2 ) $4 $6 }

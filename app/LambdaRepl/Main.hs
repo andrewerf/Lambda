@@ -45,10 +45,13 @@ read_ = putStr "λ> "
 eval :: Environment -> Term -> ( Environment, Maybe Term, Maybe Term )
 eval env tm =
   let
+    go :: Environment -> Term -> Environment
+    go env ( TmLet s tl Nothing ) = ( s, tl ) : env
+    go env ( TmLet s tl ( Just tll ) ) = ( s, tl ) : go env tll
+    go env _ = env
+
     ctm = toCore env tm
-    newEnv = case tm of
-      ( TmLet s tl ) -> ( s, tl ) : env
-      _ -> env
+    newEnv = go env tm
   in
     ( newEnv, fromCore . E.eval <$> ctm, fromCore <$> ( ctm >>= T.lift0 ) )
 
@@ -64,11 +67,10 @@ processCommand :: Environment -> Command -> IO()
 processCommand _ Quit = return ()
 processCommand env Help = do
   putStrLn "Usage: enter a lambda term to be evaluated. The output gives you the evaluation result and its type."
-  putStrLn "Use special operator: `let x = s` (without `in`) to add definition to the environment."
+  putStrLn "Use special operator: `let x = s; let y = z ...` (without `in`) to add definition to the environment."
   putStrLn ":help -- print this help"
   putStrLn ":env -- print environment"
-  putStrLn ":exec _file_ -- execute given file (by path)"
-  putStrLn ":load _file_ -- load definitions from the file (by path)"
+  putStrLn ":exec _file_ -- execute given file (by path). The file should contain a lambda term."
   repl env
 processCommand env PrintEnv = print env >> repl env
 processCommand env ( ExecuteFile fpath ) = do
