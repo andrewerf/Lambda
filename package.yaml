@@ -43,6 +43,7 @@ library:
     - happy
   dependencies:
     - array
+    - megaparsec
 
 executables:
   LambdaRepl:
@@ -54,7 +55,6 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - Lambda
-    - megaparsec
 
 tests:
   Lambda-test:
