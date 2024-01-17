@@ -44,6 +44,7 @@ library:
   dependencies:
     - array
     - megaparsec
+    - raw-strings-qq
 
 executables:
   LambdaRepl:
@@ -55,6 +56,18 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - Lambda
+  LambdaReplWeb:
+    main: Main.hs
+    source-dirs: app/LambdaReplWeb
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - Lambda
+      - websockets
+      - snap-core
+      - websockets-snap
 
 tests:
   Lambda-test:

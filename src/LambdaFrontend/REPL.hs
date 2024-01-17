@@ -1,14 +1,17 @@
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeApplications, QuasiQuotes #-}
 module LambdaFrontend.REPL
   (
   Command(..),
   pep,
   processCommand,
+  processString,
   repl
   )
 where
 
-import System.IO
+import System.IO ( hFlush, stdout )
+
+import Text.RawString.QQ
 
 import LambdaFrontend.Parser ( parse )
 import LambdaFrontend.AST
@@ -64,29 +67,30 @@ eval env tm =
 
 
 -- Parses and evaluates a term (given as a string). Returns modified environment
-pep :: Environment -> String -> IO Environment
+pep :: Environment -> String -> IO ( Environment, String )
 pep env inp = do
   let t = parse inp
   let ( newEnv, tm, tp ) = eval env t
-  putStrLn ( show tm ++ " : " ++ show tp )
-  return newEnv
+  return ( newEnv, show tm ++ " : " ++ show tp )
 
+helpMsg :: String
+helpMsg = [r|
+Usage: enter a lambda term to be evaluated. The output gives you the evaluation result and its type.
+Use special operator: `let x = s; let y = z ...` (without `in`) to add definition to the environment.
+:help -- print this help
+:env -- print environment
+:exec _file_ -- execute given file (by path). The file should contain a lambda term.
+|]
 
--- Processes a single REPL command and returns modified environment
-processCommand :: Environment -> Command -> IO Environment
-processCommand env Quit = return env
-processCommand env Help = do
-  putStrLn "Usage: enter a lambda term to be evaluated. The output gives you the evaluation result and its type."
-  putStrLn "Use special operator: `let x = s; let y = z ...` (without `in`) to add definition to the environment."
-  putStrLn ":help -- print this help"
-  putStrLn ":env -- print environment"
-  putStrLn ":exec _file_ -- execute given file (by path). The file should contain a lambda term."
-  return env
-processCommand env PrintEnv = print env >> return env
+-- Processes a single REPL command. Returns modified environment and response string
+processCommand :: Environment -> Command -> IO ( Environment, String )
+processCommand env Quit = return ( env, "" )
+processCommand env Help = return ( env, helpMsg )
+processCommand env PrintEnv = return ( env, show env )
 processCommand env ( ExecuteFile fpath ) = do
-  r <- ex2left @IOException ( readFile fpath )
-  case r of
-    Left e -> print e >> return env
+  rr <- ex2left @IOException ( readFile fpath )
+  case rr of
+    Left e -> return ( env, show e )
     Right program -> do
       pep env program
   where
@@ -94,10 +98,16 @@ processCommand env ( ExecuteFile fpath ) = do
     ex2left x = catch ( Right <$> x ) ( return . Left )
 
 
+processString :: Environment -> String -> IO ( Environment, String )
+processString env inp =
+  case parseCommand inp of
+    Nothing -> pep env inp
+    Just cmd -> processCommand env cmd
+
 -- Launches the REPL which runs infinitely (until ":quit" is supplied)
 repl :: Environment -> IO()
 repl env = do
   inp <- read_
-  case parseCommand inp of
-    Nothing -> pep env inp >>= repl
-    Just cmd -> processCommand env cmd >>= repl
+  ( newEnv, resp ) <- processString env inp
+  print resp
+  repl newEnv
