@@ -3,7 +3,8 @@ module Core.AST
   Binding(..),
   Term(..),
   getBindingName,
-  shift
+  shift,
+  fvs
   )
 where
 
@@ -59,3 +60,17 @@ shift = shift_ 0
     shift_ k x ( TmBind bind t1 t2 ) = TmBind bind ( shift_ k x t1 ) ( shift_ (k + 1) x t2 )
     shift_ k x ( TmApp t1 t2 ) = TmApp ( shift_ k x t1 ) ( shift_ k x t2 )
 
+
+-- Returns all free variables of the given term
+fvs :: Term -> [Int]
+fvs = fvs_ 0
+  where
+    -- first arg is a cut-off
+    fvs_ :: Int -> Term -> [Int]
+    fvs_ k ( TmVar t )
+      | t < k = []
+      | otherwise = [t - k]
+    fvs_ _ TmSq = []
+    fvs_ _ TmStar = []
+    fvs_ k ( TmBind _ t1 t2 ) = fvs_ k t1 ++ fvs_ ( k + 1 ) t2
+    fvs_ k ( TmApp t1 t2 ) = fvs_ k t1 ++ fvs_ k t2
