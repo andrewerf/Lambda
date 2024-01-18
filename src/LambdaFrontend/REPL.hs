@@ -32,16 +32,21 @@ data Command
   | Help
   | PrintEnv
   | ExecuteFile String
+  | AscriptionMode Bool
 
 
 type Parser = P.Parsec Void String
+
+parsecOnOff :: Parser Bool
+parsecOnOff = ( True <$ P.string "on" ) P.<|> ( False <$ P.string "off" )
 
 parsecCommand :: Parser Command
 parsecCommand = P.choice [
     Quit <$ P.string ":quit",
     Help <$ P.string ":help",
     PrintEnv <$ P.string ":env",
-    ExecuteFile <$> ( P.string ":exec " *> P.many P.anySingle )
+    ExecuteFile <$> ( P.string ":exec " *> P.many P.anySingle ),
+    AscriptionMode <$> ( P.string ":asc " *> parsecOnOff )
   ]
 
 parseCommand :: String -> Maybe Command
@@ -60,14 +65,15 @@ data ReplState = ReplState {
   }
 
 defaultReplState :: ReplState
-defaultReplState = ReplState { ascMode_ = False, env_ = [] }
+defaultReplState = ReplState { ascMode_ = True, env_ = [] }
 
 
 eval :: ReplState -> Term -> ( ReplState, Maybe Term, Maybe Term )
 eval st tm =
   let
     env = env_ st
-  
+    ra = if ascMode_ st then replaceAscribed env else id
+
     go :: Environment -> Term -> Environment
     go genv ( TmLet s tl Nothing ) = ( s, tl ) : genv
     go genv ( TmLet s tl ( Just tll ) ) = ( s, tl ) : go genv tll
@@ -75,8 +81,8 @@ eval st tm =
 
     ctm = toCore env tm
     newEnv = go env tm
-    t1 = fromCore . E.eval <$> ctm
-    t2 = fromCore <$> ( ctm >>= T.lift0 )
+    t1 = ra . fromCore . E.eval <$> ctm
+    t2 = ra . fromCore <$> ( ctm >>= T.lift0 )
   in
     ( st{ env_ = newEnv }, t1, t2 )
 
@@ -110,6 +116,10 @@ The syntax is pretty simple:
 Apart from lambda terms, the following commands are supported.
 :help -- print this help
 :env -- print environment
+:asc [on|off] -- enter (leave) ascription mode. "on" by default.
+ In this mode, all the terms are searched for the subterms, which are defined in the current environment, and replaced with their names.
+ For example, if `let A = @X:*.*` is entered, and `asc` mode is turned on, then the printed type of the term `\X:*.X`
+ would be `A`, in contrast to `@X:*.X` of `asc` mode is turned off.
 :exec _file_ -- execute given file (by path). The file should contain a lambda term. Is not supported in the web-version.
 |]
 
@@ -127,6 +137,7 @@ processCommand st ( ExecuteFile fpath ) = do
   where
     ex2left :: Exception e => IO a -> IO ( Either e a )
     ex2left x = catch ( Right <$> x ) ( return . Left )
+processCommand st ( AscriptionMode asc ) = return ( st{ascMode_ = asc}, "" )
 
 
 processString :: ReplState -> String -> IO ( ReplState, String )

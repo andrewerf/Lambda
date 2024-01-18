@@ -3,7 +3,8 @@ module LambdaFrontend.AST
   Term(..),
   Environment,
   toCore,
-  fromCore
+  fromCore,
+  replaceAscribed
   )
 where
 
@@ -78,3 +79,22 @@ fromCore = fromCore_ []
         vn_ = C.getBindingName binding
         vn = if length vn_ == 0 then "x" ++ show ( length ctx ) else vn_
     fromCore_ ctx ( C.TmApp m n ) = TmApp ( fromCore_ ctx m ) ( fromCore_ ctx n )
+
+
+-- Replaces all the subterms that have a name in the given environment
+replaceAscribed :: Environment -> Term -> Term
+replaceAscribed env tm = case filter ( (== tm) . snd ) env of
+  ( hd : _ ) -> TmVar ( fst hd )
+  [] -> case tm of
+    TmSq -> TmSq
+    TmStar -> TmStar
+    TmVar s -> TmVar s
+    TmAbs s a b -> TmAbs s ( r a ) ( r b )
+    TmPi s a b -> TmPi s ( r a ) ( r b )
+    TmArrow a b -> TmArrow ( r a ) ( r b )
+    TmApp a b -> TmApp ( r a ) ( r b )
+    t@TmLetIn{} -> t
+    TmLet s tm mtm -> TmLet s ( r tm ) ( r <$> mtm )
+  where
+    r = replaceAscribed env
+    
