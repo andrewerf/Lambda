@@ -1,7 +1,6 @@
 module Main ( main ) where
 
-import LambdaFrontend.REPL ( processString )
-import LambdaFrontend.AST ( Environment )
+import LambdaFrontend.REPL ( ReplState, defaultReplState, processString )
 
 import System.Environment ( getArgs )
 import System.IO ( hFlush, stdout )
@@ -13,16 +12,16 @@ import Data.Text as T
 
 
 talk :: WS.Connection -> IO ()
-talk = go []
+talk = go defaultReplState
   where
-    go :: Environment -> WS.Connection -> IO()
-    go env conn = do
+    go :: ReplState -> WS.Connection -> IO()
+    go st conn = do
       msg <- T.unpack <$> WS.receiveData conn
-      ( newEnv, resp ) <- processString env msg
+      ( newSt, resp ) <- processString st msg
       putStrLn $ "Client entered: " ++ msg ++ "\n\twe responded: " ++ resp
       hFlush stdout
       WS.sendTextData conn $ T.pack resp
-      go newEnv conn
+      go newSt conn
 
 
 application :: WS.ServerApp

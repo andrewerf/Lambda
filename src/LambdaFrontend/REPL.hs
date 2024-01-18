@@ -2,6 +2,8 @@
 module LambdaFrontend.REPL
   (
   Command(..),
+  ReplState,
+  defaultReplState,
   pep,
   processCommand,
   processString,
@@ -52,26 +54,39 @@ read_ = putStr "λ> "
      >> getLine
 
 
-eval :: Environment -> Term -> ( Environment, Maybe Term, Maybe Term )
-eval env tm =
+data ReplState = ReplState {
+    ascMode_ :: Bool,
+    env_ :: Environment
+  }
+
+defaultReplState :: ReplState
+defaultReplState = ReplState { ascMode_ = False, env_ = [] }
+
+
+eval :: ReplState -> Term -> ( ReplState, Maybe Term, Maybe Term )
+eval st tm =
   let
+    env = env_ st
+  
     go :: Environment -> Term -> Environment
-    go env ( TmLet s tl Nothing ) = ( s, tl ) : env
-    go env ( TmLet s tl ( Just tll ) ) = ( s, tl ) : go env tll
-    go env _ = env
+    go genv ( TmLet s tl Nothing ) = ( s, tl ) : genv
+    go genv ( TmLet s tl ( Just tll ) ) = ( s, tl ) : go genv tll
+    go genv _ = genv
 
     ctm = toCore env tm
     newEnv = go env tm
+    t1 = fromCore . E.eval <$> ctm
+    t2 = fromCore <$> ( ctm >>= T.lift0 )
   in
-    ( newEnv, fromCore . E.eval <$> ctm, fromCore <$> ( ctm >>= T.lift0 ) )
+    ( st{ env_ = newEnv }, t1, t2 )
 
 
 -- Parses and evaluates a term (given as a string). Returns modified environment
-pep :: Environment -> String -> IO ( Environment, String )
-pep env inp = do
+pep :: ReplState -> String -> IO ( ReplState, String )
+pep st inp = do
   let t = parse inp
-  let ( newEnv, tm, tp ) = eval env t
-  return ( newEnv, show tm ++ " : " ++ show tp )
+  let ( newSt, tm, tp ) = eval st t
+  return ( newSt, show tm ++ " : " ++ show tp )
 
 helpMsg :: String
 helpMsg = [r|This is a bare-bone lambda calculus interpreter, with dependent types.
@@ -99,31 +114,31 @@ Apart from lambda terms, the following commands are supported.
 |]
 
 -- Processes a single REPL command. Returns modified environment and response string
-processCommand :: Environment -> Command -> IO ( Environment, String )
-processCommand env Quit = return ( env, "" )
-processCommand env Help = return ( env, helpMsg )
-processCommand env PrintEnv = return ( env, show env )
-processCommand env ( ExecuteFile fpath ) = do
+processCommand :: ReplState -> Command -> IO ( ReplState, String )
+processCommand st Quit = return ( st, "" )
+processCommand st Help = return ( st, helpMsg )
+processCommand st PrintEnv = return ( st, show $ env_ st )
+processCommand st ( ExecuteFile fpath ) = do
   rr <- ex2left @IOException ( readFile fpath )
   case rr of
-    Left e -> return ( env, show e )
+    Left e -> return ( st, show e )
     Right program -> do
-      pep env program
+      pep st program
   where
     ex2left :: Exception e => IO a -> IO ( Either e a )
     ex2left x = catch ( Right <$> x ) ( return . Left )
 
 
-processString :: Environment -> String -> IO ( Environment, String )
-processString env inp =
+processString :: ReplState -> String -> IO ( ReplState, String )
+processString st inp =
   case parseCommand inp of
-    Nothing -> pep env inp
-    Just cmd -> processCommand env cmd
+    Nothing -> pep st inp
+    Just cmd -> processCommand st cmd
 
 -- Launches the REPL which runs infinitely (until ":quit" is supplied)
-repl :: Environment -> IO()
-repl env = do
+repl :: ReplState -> IO()
+repl st = do
   inp <- read_
-  ( newEnv, resp ) <- processString env inp
-  print resp
-  repl newEnv
+  ( newSt, resp ) <- processString st inp
+  putStrLn resp
+  repl newSt

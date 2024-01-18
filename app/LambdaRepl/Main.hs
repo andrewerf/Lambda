@@ -1,6 +1,6 @@
 module Main ( main ) where
 
-import LambdaFrontend.REPL ( repl )
+import LambdaFrontend.REPL ( defaultReplState, repl )
 
 main :: IO()
-main = repl []
+main = repl defaultReplState
