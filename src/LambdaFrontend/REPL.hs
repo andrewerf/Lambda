@@ -74,12 +74,28 @@ pep env inp = do
   return ( newEnv, show tm ++ " : " ++ show tp )
 
 helpMsg :: String
-helpMsg = [r|
-Usage: enter a lambda term to be evaluated. The output gives you the evaluation result and its type.
-Use special operator: `let x = s; let y = z ...` (without `in`) to add definition to the environment.
+helpMsg = [r|This is a bare-bone lambda calculus interpreter, with dependent types.
+
+The syntax is pretty simple:
+  - Kind is denoted by `*`.
+  - Sort rule is: `* : □`, which you can verify by typing `*` alone.
+  - Abstraction is denoted with '\' and '.'. For example, this is the polymorphic identity function: `\X:*.\x:X.x`.
+  - Abstraction on a type level (i.e. "forall" operator) is denoted by '@' and '.'. For example, this is the type of the polymorphic identity function: `@X:*.X -> X`.
+  - Arrow `A -> B` is merely a syntactic construct upon Pi-type `@x:A.B` if x is not a free-variable in B (B doesn't depend on x).
+  - There are two forms of `let` bindings:
+    - First is the part of the core language and has the following form: `let x = A in T`. You can also use nested let-bindings.
+    - Second is merely part of the repl and has the following form: `let x = A` (without `in`). This command modifies REPL environment, so that you can refer to `x` in it.
+      For example, the following series of commands correctly calculates the value of logical expression `true & false` using Church-encoded booleans:
+      λ> let Bool = @X:*.X->X->X;
+      λ> let tru = \X:*.\x:X.\y:X.x;
+      λ> let fls = \X:*.\x:X.\y:X.y;
+      λ> let and = \a:Bool.\b:Bool.a Bool b fls;
+      λ> and tru fls
+
+Apart from lambda terms, the following commands are supported.
 :help -- print this help
 :env -- print environment
-:exec _file_ -- execute given file (by path). The file should contain a lambda term.
+:exec _file_ -- execute given file (by path). The file should contain a lambda term. Is not supported in the web-version.
 |]
 
 -- Processes a single REPL command. Returns modified environment and response string
