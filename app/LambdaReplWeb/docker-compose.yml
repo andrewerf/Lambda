@@ -14,4 +14,4 @@ services:
       - ./htdocs:/usr/local/apache2/htdocs
       - ./httpd.conf:/usr/local/apache2/conf/httpd.conf
     ports:
-      - "80:80"
+      - "8800:80"
