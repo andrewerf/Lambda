@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/2.9.2/xterm.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/2.9.2/xterm.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/2.9.2/addons/fit/fit.js"></script>
+    <script src="https://cdn.rawgit.com/wavesoft/local-echo/7ee165d2c955fe07623b5d74f6dda3ae18815ba4/dist/local-echo.js"></script>
+    <title>Lambda Demo</title>
+</head>
+<body>
+<div id="terminal"></div>
+<script>
+    // stolen from https://codepen.io/anon/pen/qMYjGZ
+
+    // Create a terminal instance
+    const term = new Terminal({
+      fontFamily: "'Roboto Mono', monospace",
+      fontSize: 12,
+      cols: 150,
+      rows: 50
+    });
+    term.open(document.getElementById('terminal'));
+
+    // Create a local controller
+    const localEcho = new LocalEchoController(term);
+
+    const socket = new WebSocket('ws://whateveritis.strangled.net:8080');
+
+    socket.addEventListener("message", (event) => {
+        localEcho.println(event.data);
+        readLine();
+    });
+
+    localEcho.println("Type :help to get help")
+
+    const readLine = () => {
+      localEcho.read("λ> ").then((input) => {
+        socket.send(input)
+      })
+    };
+    readLine();
+</script>
+</body>
+</html>

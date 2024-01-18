@@ -1,0 +1,17 @@
+version: "3.0"
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile-backend
+    command:
+      - "0.0.0.0"
+      - "8080"
+    ports:
+      - "8080:8080"
+  frontend:
+    image: docker.io/httpd:2.4
+    volumes:
+      - ./htdocs:/usr/local/apache2/htdocs
+      - ./httpd.conf:/usr/local/apache2/conf/httpd.conf
+    ports:
+      - "80:80"

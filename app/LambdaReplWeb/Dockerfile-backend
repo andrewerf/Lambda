@@ -1,0 +1,17 @@
+FROM haskell:9 as build
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update -yq
+RUN apt install -yq git
+
+WORKDIR /tmp/
+RUN git clone https://github.com/andrewerf/Lambda.git
+WORKDIR /tmp/Lambda
+
+RUN stack setup --install-ghc
+RUN stack build
+
+EXPOSE 8000
+
+ENTRYPOINT ["stack", "run", "LambdaReplWeb"]
