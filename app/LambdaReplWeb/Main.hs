@@ -19,6 +19,8 @@ talk = go []
     go env conn = do
       msg <- T.unpack <$> WS.receiveData conn
       ( newEnv, resp ) <- processString env msg
+      putStrLn $ "Client entered: " ++ msg ++ "\n\twe responded: " ++ resp
+      hFlush stdout
       WS.sendTextData conn $ T.pack resp
       go newEnv conn
 
