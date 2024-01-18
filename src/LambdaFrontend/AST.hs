@@ -31,7 +31,7 @@ instance Show Term where
   show ( TmVar s ) = s
   show ( TmAbs s a m ) = "\\" ++ s ++ ":" ++ show a ++ "." ++ show m
   show ( TmPi s a m ) = "Π" ++ s ++ ":" ++ show a ++ "." ++ show m
-  show ( TmArrow a b ) = show a ++ " -> " ++ show b
+  show ( TmArrow a b ) = "(" ++ show a ++ " -> " ++ show b ++ ")"
   show ( TmApp t1 t2 ) = "(" ++ show t1 ++ ") (" ++ show t2 ++ ")"
   show ( TmLet x y Nothing ) = "let " ++ x ++ " = " ++ show y
   show ( TmLet x y ( Just tm ) ) = "let " ++ x ++ " = " ++ show y ++ "; " ++ show tm
@@ -67,17 +67,16 @@ fromCore = fromCore_ []
     fromCore_ _ C.TmSq = TmSq
     fromCore_ _ C.TmStar = TmStar
     fromCore_ ctx ( C.TmVar i ) = TmVar $ ctx !! i
-    fromCore_ ctx ( C.TmBind binding m n ) =
-      let
-        f :: C.Binding -> String -> Term -> Term -> Term
-        f ( C.AbsBinding _ ) = TmAbs
-        f ( C.PiBinding _ ) = TmPi
-        f ( C.LetBinding _ ) = TmLetIn
-      in
-        f binding vn ( fromCore_ ctx m ) ( fromCore_ ( vn : ctx ) n )
+    fromCore_ ctx ( C.TmBind binding m n ) = case binding of
+      ( C.PiBinding _ ) | 0 `notElem` C.fvs n -> TmArrow ( fctx m ) ( fctx $ C.shift (-1) n )
+      ( C.PiBinding _ ) -> TmPi vn ( fctx m ) ( fctxExt n )
+      ( C.LetBinding _ ) -> TmLetIn vn ( fctx m ) ( fctxExt n )
+      ( C.AbsBinding _ ) -> TmAbs vn ( fctx m ) ( fctxExt n )
       where
         vn_ = C.getBindingName binding
         vn = if length vn_ == 0 then "x" ++ show ( length ctx ) else vn_
+        fctx = fromCore_ ctx
+        fctxExt = fromCore_ ( vn : ctx )
     fromCore_ ctx ( C.TmApp m n ) = TmApp ( fromCore_ ctx m ) ( fromCore_ ctx n )
 
 
