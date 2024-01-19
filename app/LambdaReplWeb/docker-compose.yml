@@ -4,10 +4,21 @@ services:
     build:
       dockerfile: Dockerfile-backend
     command:
+      - "-h"
       - "0.0.0.0"
+      - "-p"
       - "8080"
+      - "--ssl-port"
+      - "4430"
+      - "--cert"
+      - "/etc/letsencrypt/live/whateveritis.strangled.net/fullchain.pem"
+      - "--key"
+      - "/etc/letsencrypt/live/whateveritis.strangled.net/privkey.pem"
     ports:
       - "8080:8080"
+      - "4430:4430"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
   frontend:
     image: docker.io/httpd:2.4
     volumes:

@@ -12,6 +12,5 @@ WORKDIR /tmp/Lambda
 RUN stack setup --install-ghc
 RUN stack build
 
-EXPOSE 8000
 
 ENTRYPOINT ["stack", "run", "LambdaReplWeb"]

@@ -65,9 +65,12 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - Lambda
+      - text
       - websockets
       - snap-core
+      - snap-server
       - websockets-snap
+      - optparse-applicative
 
 tests:
   Lambda-test:

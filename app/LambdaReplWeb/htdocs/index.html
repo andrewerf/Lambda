@@ -25,7 +25,7 @@
     // Create a local controller
     const localEcho = new LocalEchoController(term);
 
-    const socket = new WebSocket('ws://whateveritis.strangled.net:8080');
+    const socket = new WebSocket('wss://whateveritis.strangled.net:4430');
 
     socket.addEventListener("message", (event) => {
         localEcho.println(event.data);
