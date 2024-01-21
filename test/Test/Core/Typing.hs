@@ -46,9 +46,23 @@ testLetBinding = TestLabel "let-bindigns" $ numberedTestList [
   ]
 
 
+testPairs = TestLabel "pair" $ numberedTestList [
+    TestCase $ assertEqualM "typeof(fst) == @X:*.@Y:*. Pair X Y -> X"
+        ( mkPi TmStar $ mkPi TmStar $ mkArrow2 ( mkApp3 _pair_ loc1 loc0 ) loc1 )
+        ( lift0 fst_ ),
+    TestCase $ assertEqualM "forall X:*, Y:*, x:X, y:Y. typeof(fst(pair(x, y)) == X"
+        ( mkPi TmStar $ mkPi TmStar $ mkPi loc1 $ mkPi loc1 loc3 )
+        ( lift0 $ mkAbs TmStar $ mkAbs TmStar $ mkAbs loc1 $ mkAbs loc1 $ mkApp4 fst_ loc3 loc2 ( mkApp5 pair_ loc3 loc2 loc1 loc0 ) ),
+    TestCase $ assertEqualM "forall X:*, Y:*, x:X, y:Y. typeof(snd(pair(x, y)) == y"
+        ( mkPi TmStar $ mkPi TmStar $ mkPi loc1 $ mkPi loc1 loc2 )
+        ( lift0 $ mkAbs TmStar $ mkAbs TmStar $ mkAbs loc1 $ mkAbs loc1 $ mkApp4 snd_ loc3 loc2 ( mkApp5 pair_ loc3 loc2 loc1 loc0 ) )
+  ]
+
+
 testsTyping = TestList [
     testSimple,
     testBoolean,
     testNatural,
-    testLetBinding
+    testLetBinding,
+    testPairs
   ]

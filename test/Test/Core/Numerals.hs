@@ -30,6 +30,9 @@ mkApp3 t1 t2 = mkApp2 ( mkApp2 t1 t2 )
 mkApp4 :: Term -> Term -> Term -> Term -> Term
 mkApp4 t1 t2 t3 = mkApp2 ( mkApp3 t1 t2 t3 )
 
+mkApp5 :: Term -> Term -> Term -> Term -> Term -> Term
+mkApp5 t1 t2 t3 t4 = mkApp2 ( mkApp4 t1 t2 t3 t4 )
+
 
 mkArrow2 :: Term -> Term -> Term
 mkArrow2 t1 t2 = mkPi t1 ( shift 1 t2 )
@@ -72,3 +75,9 @@ c7_ = mkApp2 succ_ c6_
 c8_ = mkApp2 succ_ c7_
 c9_ = mkApp2 succ_ c8_
 c10_ = mkApp2 succ_ c9_
+
+
+_pair_ = mkAbs TmStar $ mkAbs TmStar $ mkPi TmStar $ mkArrow2 ( mkArrow3 loc2 loc1 loc0 ) loc0
+fst_ = mkAbs TmStar $ mkAbs TmStar $ mkAbs ( mkApp3 _pair_ loc1 loc0 ) $ mkApp3 loc0 loc2 ( mkAbs loc2 $ mkAbs loc2 loc1 )
+snd_ = mkAbs TmStar $ mkAbs TmStar $ mkAbs ( mkApp3 _pair_ loc1 loc0 ) $ mkApp3 loc0 loc1 ( mkAbs loc2 $ mkAbs loc2 loc0 )
+pair_ = mkAbs TmStar $ mkAbs TmStar $ mkAbs loc1 $ mkAbs loc1 $ mkAbs TmStar $ mkAbs ( mkArrow3 loc4 loc3 loc0 ) $ mkApp3 loc0 loc3 loc2

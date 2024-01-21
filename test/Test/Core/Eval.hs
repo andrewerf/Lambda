@@ -55,9 +55,15 @@ testLetBinding = TestLabel "let-bindigns" $ numberedTestList [
       c7_ ( mkLet c2_ ( mkLet c5_ ( mkApp3 plus_ loc1 loc0 ) ) )
   ]
 
+testTypeApp = TestLabel "type application" $ numberedTestList [
+    TestCase $ assertBetaEqual "(@x:X.X) x == X" loc0 ( mkApp2 ( mkPi loc0 loc1 ) loc2 ),
+    TestCase $ assertBetaEqual "(@X:*.X) T == T" loc0 ( mkApp2 ( mkPi loc0 loc1 ) loc0 )
+  ]
+
 
 testsEval = TestList [
     testBoolean,
     testNatural,
-    testLetBinding
+    testLetBinding,
+    testTypeApp
   ]

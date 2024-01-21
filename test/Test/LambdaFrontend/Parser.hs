@@ -47,8 +47,14 @@ testNatural = TestLabel "natural numerals" $ numberedTestList [
     TestCase $ checkTerm "^" exp_
   ]
 
+testPair = TestLabel "pairs" $ numberedTestList [
+    TestCase $ checkTerm "Pair" _pair_,
+    TestCase $ checkTerm "fst" fst_
+  ]
+
 
 testsParser = TestList [
     testBoolean,
-    testNatural
+    testNatural,
+    testPair
   ]

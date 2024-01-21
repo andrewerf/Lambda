@@ -40,6 +40,7 @@ evalLazy = go []
     go l ( TmApp f x ) = go (x : l) f
     go l ( TmBind ( LetBinding _ ) x y ) = go l ( substShift y x )
     go (x : l) ( TmBind ( AbsBinding _ ) _ t ) = go l ( substShift t x )
+    go (x : l) ( TmBind ( PiBinding _ ) _ t ) = go l ( substShift t x )
     go l f = foldl TmApp f l
 
 -- Evaluates given term with all sub expressions
@@ -49,6 +50,8 @@ eval = go []
     go :: [Term] -> Term -> Term
     go l ( TmApp f x ) = go (x : l) f
     go l ( TmBind ( LetBinding _ ) x y ) = go l ( substShift y x )
-    go [] ( TmBind ( AbsBinding s ) a t ) = TmBind ( AbsBinding s ) a ( eval t )
+    go [] ( TmBind ( AbsBinding s ) a t ) = TmBind ( AbsBinding s ) ( eval a ) ( eval t )
     go (x : l) ( TmBind ( AbsBinding _ ) _ t ) = go l ( substShift t x )
+    go [] ( TmBind ( PiBinding s ) a t ) = TmBind ( PiBinding s ) ( eval a ) ( eval t)
+    go (x : l) ( TmBind ( PiBinding _ ) _ t ) = go l ( substShift t x )
     go l f = foldl TmApp f ( map eval l )

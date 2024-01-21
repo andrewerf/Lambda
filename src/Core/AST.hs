@@ -46,7 +46,7 @@ instance Show Term where
   show ( TmBind ( AbsBinding _ ) a m ) = "\\:" ++ show a ++ "." ++ show m
   show ( TmBind ( PiBinding _ ) a m ) = "Π:" ++ show a ++ "." ++ show m
   show ( TmBind ( LetBinding _ ) a m ) = "let = " ++ show a ++ " in " ++ show m
-  show ( TmApp t1 t2 ) = "(" ++ show t1 ++ " " ++ show t2 ++ ")"
+  show ( TmApp t1 t2 ) = "(" ++ show t1 ++ ") (" ++ show t2 ++ ")"
 
 -- Shifts with a cut-off (first arg)
 shift :: Int -> Term -> Term
