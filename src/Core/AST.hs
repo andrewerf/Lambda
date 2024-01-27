@@ -37,6 +37,8 @@ data Term
   | TmVar Int -- bound variable (on term or type level)
   | TmBind Binding Term Term -- let-binding `let x = t1 in t2`
   | TmApp Term Term -- application, `TmApp t1 t2 <=> t1 t2`
+  | TmUnit -- unit term
+  | TmTUnit -- unit type (with the only inhabitant: unit term above)
   deriving ( Eq )
   
 instance Show Term where
@@ -47,6 +49,8 @@ instance Show Term where
   show ( TmBind ( PiBinding _ ) a m ) = "Π:" ++ show a ++ "." ++ show m
   show ( TmBind ( LetBinding _ ) a m ) = "let = " ++ show a ++ " in " ++ show m
   show ( TmApp t1 t2 ) = "(" ++ show t1 ++ ") (" ++ show t2 ++ ")"
+  show TmUnit = "unit"
+  show TmTUnit = "Unit"
 
 -- Shifts with a cut-off (first arg)
 shift :: Int -> Term -> Term
@@ -59,6 +63,8 @@ shift = shift_ 0
     shift_ _ _ TmStar = TmStar
     shift_ k x ( TmBind bind t1 t2 ) = TmBind bind ( shift_ k x t1 ) ( shift_ (k + 1) x t2 )
     shift_ k x ( TmApp t1 t2 ) = TmApp ( shift_ k x t1 ) ( shift_ k x t2 )
+    shift_ _ _ TmUnit = TmUnit
+    shift_ _ _ TmTUnit = TmTUnit
 
 
 -- Returns all free variables of the given term
@@ -72,5 +78,7 @@ fvs = fvs_ 0
       | otherwise = [t - k]
     fvs_ _ TmSq = []
     fvs_ _ TmStar = []
+    fvs_ _ TmUnit = []
+    fvs_ _ TmTUnit = []
     fvs_ k ( TmBind _ t1 t2 ) = fvs_ k t1 ++ fvs_ ( k + 1 ) t2
     fvs_ k ( TmApp t1 t2 ) = fvs_ k t1 ++ fvs_ k t2

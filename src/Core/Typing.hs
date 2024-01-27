@@ -35,6 +35,8 @@ betaEq t1 t2 = eval t1 == eval t2
 lift :: Context -> Term -> Maybe Term
 lift _ TmSq = Nothing
 lift _ TmStar = Just TmSq
+lift _ TmUnit = Just TmTUnit
+lift _ TmTUnit = Just TmStar
 lift ctx ( TmVar n ) = getTerm ctx n -- variable should be in context
 
 lift ctx ( TmApp m n ) = do

@@ -23,6 +23,8 @@ data Term
   | TmApp Term Term
   | TmLetIn String Term Term
   | TmLet String Term ( Maybe Term ) -- special `let` for the REPL
+  | TmUnit
+  | TmTUnit
   deriving Eq
 
 instance Show Term where
@@ -36,6 +38,8 @@ instance Show Term where
   show ( TmLet x y Nothing ) = "let " ++ x ++ " = " ++ show y
   show ( TmLet x y ( Just tm ) ) = "let " ++ x ++ " = " ++ show y ++ "; " ++ show tm
   show ( TmLetIn x y t ) = "let " ++ x ++ " = " ++ show y ++ " in " ++ show t
+  show TmUnit = "unit"
+  show TmTUnit = "Unit"
 
 
 type Environment = [(String, Term)]
@@ -48,6 +52,8 @@ toCore = toCore_ []
     toCore_ :: [String] -> Environment -> Term -> Maybe C.Term
     toCore_ _ _ TmSq = Just C.TmSq
     toCore_ _ _ TmStar = Just C.TmStar
+    toCore_ _ _ TmUnit = Just C.TmUnit
+    toCore_ _ _ TmTUnit = Just C.TmTUnit
     toCore_ ctx env ( TmVar s ) = case elemIndex s ctx of
       Nothing -> lookup s env >>= toCore_ ctx env
       Just i -> Just $ C.TmVar i
@@ -66,6 +72,8 @@ fromCore = fromCore_ []
     fromCore_ :: [String] -> C.Term -> Term
     fromCore_ _ C.TmSq = TmSq
     fromCore_ _ C.TmStar = TmStar
+    fromCore_ _ C.TmUnit = TmUnit
+    fromCore_ _ C.TmTUnit = TmTUnit
     fromCore_ ctx ( C.TmVar i ) = TmVar $ ctx !! i
     fromCore_ ctx ( C.TmBind binding m n ) = case binding of
       ( C.PiBinding _ ) | 0 `notElem` C.fvs n -> TmArrow ( fctx m ) ( fctx $ C.shift (-1) n )
@@ -87,6 +95,8 @@ replaceAscribed env tm = case filter ( (== tm) . snd ) env of
   [] -> case tm of
     TmSq -> TmSq
     TmStar -> TmStar
+    TmUnit -> TmUnit
+    TmTUnit -> TmTUnit
     TmVar s -> TmVar s
     TmAbs s a b -> TmAbs s ( r a ) ( r b )
     TmPi s a b -> TmPi s ( r a ) ( r b )

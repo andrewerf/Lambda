@@ -24,6 +24,8 @@ var			{ TkVar _ }
 let         { TkLet }
 '='         { TkEq }
 in          { TkIn }
+unit        { TkUnit }
+tUnit       { TkTUnit }
 
 %%
 
@@ -52,6 +54,8 @@ Lambda : '\\' var ':' Expr '.' Expr
 Atom : '(' Expr ')'             { $2 }
      | var                      { TmVar ( tkVarName $1 ) }
      | '*'                      { TmStar }
+     | unit                     { TmUnit }
+     | tUnit                    { TmTUnit }
 
 {
 parseError :: [Token] -> a

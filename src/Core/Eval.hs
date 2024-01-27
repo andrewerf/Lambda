@@ -15,6 +15,8 @@ import Core.AST
 subst :: Int -> Term -> Term -> Term
 subst _ TmSq _ = TmSq
 subst _ TmStar _ = TmStar
+subst _ TmUnit _ = TmUnit
+subst _ TmTUnit _ = TmTUnit
 subst i t@( TmVar j ) x
   | i == j = x
   | otherwise = t

@@ -12,6 +12,8 @@ $greek = [α-ζΑ-Ζ]
 tokens :-
 
 $white+		;
+unit            { \_ -> TkUnit }
+Unit            { \_ -> TkTUnit }
 let             { \_ -> TkLet }
 in              { \_ -> TkIn }
 \\				{ \_ -> TkAbs }
@@ -43,7 +45,9 @@ data Token =
   TkPi |
   TkLet |
   TkEq |
-  TkIn
+  TkIn |
+  TkUnit |
+  TkTUnit
   deriving ( Eq, Show )
 
 tkVarName :: Token -> String
