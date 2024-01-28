@@ -1,7 +1,11 @@
+{-# LANGUAGE DeriveFoldable #-}
+
 module Core.AST
   (
+  FunctorWithDepth(..),
   Binding(..),
-  Term(..),
+  PTerm(..),
+  Term,
   getBindingName,
   shift,
   fvs
@@ -31,17 +35,19 @@ getBindingName ( LetBinding s ) = s
 -- Therefore it maybe correct to write `t1 : t2` for some terms t1 and t2 (for instance, when t1 = Int, t2 = *).
 -- In this case, we call `t2` a parent of `t1`.
 -- Note that the word `term` is used interchangeably with the word `expression` here.
-data Term
+data PTerm a
   = TmSq -- square (□). This is one level above kinds. `( Πx : *. * ) : □` (similar to `* -> * : □`). Also, `* : □` (sort-rule).
   | TmStar -- star (*). The basic kind.
-  | TmVar Int -- bound variable (on term or type level)
-  | TmBind Binding Term Term -- let-binding `let x = t1 in t2`
-  | TmApp Term Term -- application, `TmApp t1 t2 <=> t1 t2`
+  | TmVar a -- bound variable (on term or type level)
+  | TmBind Binding ( PTerm a ) ( PTerm a ) -- let-binding `let x = t1 in t2`
+  | TmApp ( PTerm a ) ( PTerm a ) -- application, `TmApp t1 t2 <=> t1 t2`
   | TmUnit -- unit term
   | TmTUnit -- unit type (with the only inhabitant: unit term above)
-  deriving ( Eq )
-  
-instance Show Term where
+  deriving ( Eq, Foldable )
+
+type Term = PTerm Int
+
+instance Show a => Show ( PTerm a ) where
   show TmSq = "□"
   show TmStar = "*"
   show ( TmVar x ) = show x
@@ -52,33 +58,40 @@ instance Show Term where
   show TmUnit = "unit"
   show TmTUnit = "Unit"
 
+
+class FunctorWithDepth f where
+  fmapWithDepth :: ( Int -> a -> b ) -> f a -> f b
+
+instance FunctorWithDepth PTerm where
+  fmapWithDepth = go 0
+    where
+      go :: Int -> ( Int -> a -> b ) -> PTerm a -> PTerm b
+      go _ _ TmSq = TmSq
+      go _ _ TmStar = TmStar
+      go i f ( TmVar x ) = TmVar $ f i x
+      go i f ( TmBind b t1 t2 ) = TmBind b ( go i f t1 ) ( go ( i + 1 ) f t2 )
+      go i f ( TmApp t1 t2 ) = TmApp ( go i f t1 ) ( go i f t2 )
+      go _ _ TmUnit = TmUnit
+      go _ _ TmTUnit = TmTUnit
+
+instance Functor PTerm where
+  fmap f = fmapWithDepth ( const f )
+
+
 -- Shifts with a cut-off (first arg)
 shift :: Int -> Term -> Term
-shift = shift_ 0
+shift s = fmapWithDepth f
   where
-    shift_ k x tm@( TmVar t )
-      | t < k = tm
-      | otherwise = TmVar ( t + x )
-    shift_ _ _ TmSq = TmSq
-    shift_ _ _ TmStar = TmStar
-    shift_ k x ( TmBind bind t1 t2 ) = TmBind bind ( shift_ k x t1 ) ( shift_ (k + 1) x t2 )
-    shift_ k x ( TmApp t1 t2 ) = TmApp ( shift_ k x t1 ) ( shift_ k x t2 )
-    shift_ _ _ TmUnit = TmUnit
-    shift_ _ _ TmTUnit = TmTUnit
-
+    f :: Int -> Int -> Int
+    f dep var
+      | var < dep = var
+      | otherwise = s + var
 
 -- Returns all free variables of the given term
 fvs :: Term -> [Int]
-fvs = fvs_ 0
+fvs = concat . fmapWithDepth f
   where
-    -- first arg is a cut-off
-    fvs_ :: Int -> Term -> [Int]
-    fvs_ k ( TmVar t )
-      | t < k = []
-      | otherwise = [t - k]
-    fvs_ _ TmSq = []
-    fvs_ _ TmStar = []
-    fvs_ _ TmUnit = []
-    fvs_ _ TmTUnit = []
-    fvs_ k ( TmBind _ t1 t2 ) = fvs_ k t1 ++ fvs_ ( k + 1 ) t2
-    fvs_ k ( TmApp t1 t2 ) = fvs_ k t1 ++ fvs_ k t2
+    f :: Int -> Int -> [Int]
+    f dep var
+      | var < dep = []
+      | otherwise = [var - dep]
