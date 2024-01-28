@@ -19,6 +19,7 @@ services:
       - "4430:4430"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
+    restart: always
   frontend:
     image: docker.io/httpd:2.4
     volumes:
@@ -26,3 +27,4 @@ services:
       - ./httpd.conf:/usr/local/apache2/conf/httpd.conf
     ports:
       - "8800:80"
+    restart: always
