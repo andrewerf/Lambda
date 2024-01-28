@@ -11,6 +11,7 @@ where
 import Data.List ( elemIndex )
 
 import qualified Core.AST as C
+import qualified Core.Eval as C
 
 -- Same as in core, but with names instead of De Bruijn indices
 data Term
@@ -90,7 +91,7 @@ fromCore = fromCore_ []
 
 -- Replaces all the subterms that have a name in the given environment
 replaceAscribed :: Environment -> Term -> Term
-replaceAscribed env tm = case filter ( (== tm) . snd ) env of
+replaceAscribed env tm = case filter ( pr tm . snd ) env of
   ( hd : _ ) -> TmVar ( fst hd )
   [] -> case tm of
     TmSq -> TmSq
@@ -106,4 +107,9 @@ replaceAscribed env tm = case filter ( (== tm) . snd ) env of
     TmLet s tm mtm -> TmLet s ( r tm ) ( r <$> mtm )
   where
     r = replaceAscribed env
-    
+
+    pr :: Term -> Term -> Bool
+    pr t1 t2 = maybe False id $ do
+      tc1 <- toCore env t1
+      tc2 <- toCore env t2
+      return $ C.eval tc1 == C.eval tc2
