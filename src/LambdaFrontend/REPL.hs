@@ -33,6 +33,7 @@ data Command
   | PrintEnv
   | ExecuteFile String
   | AscriptionMode Bool
+  | Check String String
 
 
 type Parser = P.Parsec Void String
@@ -46,7 +47,9 @@ parsecCommand = P.choice [
     Help <$ P.string ":help",
     PrintEnv <$ P.string ":env",
     ExecuteFile <$> ( P.string ":exec " *> P.many P.anySingle ),
-    AscriptionMode <$> ( P.string ":asc " *> parsecOnOff )
+    AscriptionMode <$> ( P.string ":asc " *> parsecOnOff ),
+    Check <$> ( P.string ":check \"" *> P.manyTill P.anySingle ( P.char '"' ) )
+          <*> ( P.string " \"" *> P.manyTill P.anySingle ( P.char '"' ) )
   ]
 
 parseCommand :: String -> Maybe Command
@@ -121,6 +124,7 @@ Apart from lambda terms, the following commands are supported.
  For example, if `let A = @X:*.*` is entered, and `asc` mode is turned on, then the printed type of the term `\X:*.X`
  would be `A`, in contrast to `@X:*.X` of `asc` mode is turned off.
 :exec _file_ -- execute given file (by path). The file should contain a lambda term. Is not supported in the web-version.
+:check "tm" "tp" -- checks that term `tm` has type `tp`. Prints True or False.
 |]
 
 -- Processes a single REPL command. Returns modified environment and response string
@@ -138,6 +142,12 @@ processCommand st ( ExecuteFile fpath ) = do
     ex2left :: Exception e => IO a -> IO ( Either e a )
     ex2left x = catch ( Right <$> x ) ( return . Left )
 processCommand st ( AscriptionMode asc ) = return ( st{ascMode_ = asc}, "" )
+processCommand st ( Check s1 s2 ) =
+  let
+    ( _, _, lifted ) = eval st ( parse s1 )
+    ( _, tp, _ ) = eval st ( parse s2 )
+  in
+    return ( st, show $ maybe False id ( liftA2 (==) tp lifted ) )
 
 
 processString :: ReplState -> String -> IO ( ReplState, String )
